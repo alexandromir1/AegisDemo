@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import {
   MapContainer,
   TileLayer,
@@ -11,24 +11,43 @@ import {
 } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import type { FireEvent, FirePerimeter, NearbyAsset } from '../../types'
+import type { FireEvent, FirePerimeter, MapLayerId, NearbyAsset } from '../../types'
 import { useDemo } from '../../context/DemoContext'
-import { formatUtc, growthLabel } from '../../utils/format'
+import { formatUtc, growthLabel, territoryLabelKey } from '../../utils/format'
 import { demoMapCenter, demoMapZoom } from '../../data/demo/territories'
-import { useEffect } from 'react'
+import { useT } from '../../i18n/LocaleContext'
+import type { TranslationKey } from '../../i18n/en'
 
 const tileUrls = {
   satellite:
     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  terrain:
-    'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+  terrain: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
   dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+}
+
+const layerLabelKeys: Record<MapLayerId, TranslationKey> = {
+  fireEvents: 'map.layer.fireEvents',
+  monitoredTerritory: 'map.layer.monitoredTerritory',
+  satellite: 'map.layer.satellite',
+  weather: 'map.layer.weather',
+  wind: 'map.layer.wind',
+  vegetation: 'map.layer.vegetation',
+  firePerimeter: 'map.layer.firePerimeter',
+  infrastructure: 'map.layer.infrastructure',
 }
 
 function MapInvalidator({ styleKey }: { styleKey: string }) {
   const map = useMap()
   useEffect(() => {
-    map.invalidateSize()
+    const timers = [0, 50, 150, 400].map((ms) =>
+      window.setTimeout(() => map.invalidateSize(), ms),
+    )
+    const onResize = () => map.invalidateSize()
+    window.addEventListener('resize', onResize)
+    return () => {
+      timers.forEach((id) => window.clearTimeout(id))
+      window.removeEventListener('resize', onResize)
+    }
   }, [map, styleKey])
   return null
 }
@@ -80,6 +99,7 @@ export function AegisMap({
   compact = false,
   replayMarker,
 }: AegisMapProps) {
+  const t = useT()
   const { layers, mapStyle, setMapStyle, territories, selectedTerritoryId, toggleLayer } =
     useDemo()
 
@@ -91,7 +111,7 @@ export function AegisMap({
   const visibleTerritories =
     selectedTerritoryId === 'all'
       ? territories
-      : territories.filter((t) => t.id === selectedTerritoryId)
+      : territories.filter((territory) => territory.id === selectedTerritoryId)
 
   const visibleIncidents =
     selectedTerritoryId === 'all'
@@ -110,13 +130,13 @@ export function AegisMap({
                 className={mapStyle === s ? 'active' : ''}
                 onClick={() => setMapStyle(s)}
               >
-                {s}
+                {t(`map.style.${s}`)}
               </button>
             ))}
           </div>
 
           <div className="layer-control">
-            <h4>Layers</h4>
+            <h4>{t('map.layers')}</h4>
             {layers.map((layer) => (
               <label key={layer.id} className="layer-item">
                 <input
@@ -124,7 +144,7 @@ export function AegisMap({
                   checked={layer.enabled}
                   onChange={() => toggleLayer(layer.id)}
                 />
-                {layer.label}
+                {t(layerLabelKeys[layer.id])}
               </label>
             ))}
           </div>
@@ -136,13 +156,10 @@ export function AegisMap({
         zoom={compact ? 11 : demoMapZoom}
         zoomControl={!compact}
         scrollWheelZoom
+        attributionControl={false}
       >
-        <MapInvalidator styleKey={mapStyle} />
-        <TileLayer
-          key={mapStyle}
-          url={tileUrls[mapStyle]}
-          attribution='&copy; Esri / OpenStreetMap / CARTO — demo basemap'
-        />
+        <MapInvalidator styleKey={`${mapStyle}-${className ?? 'default'}-${compact}`} />
+        <TileLayer key={mapStyle} url={tileUrls[mapStyle]} attribution="" />
 
         {focusIncident && (
           <FocusOn
@@ -153,10 +170,10 @@ export function AegisMap({
         )}
 
         {layerOn.satellite &&
-          visibleTerritories.map((t) => (
+          visibleTerritories.map((territory) => (
             <Polygon
-              key={`sat-${t.id}`}
-              positions={t.coordinates}
+              key={`sat-${territory.id}`}
+              positions={territory.coordinates}
               pathOptions={{
                 color: '#f4d35e',
                 weight: 1,
@@ -165,32 +182,35 @@ export function AegisMap({
                 dashArray: '2 6',
               }}
             >
-              <Tooltip sticky>Simulated satellite coverage</Tooltip>
+              <Tooltip sticky>{t('map.satCoverage')}</Tooltip>
             </Polygon>
           ))}
 
         {layerOn.monitoredTerritory &&
-          visibleTerritories.map((t) => (
-            <Polygon
-              key={t.id}
-              positions={t.coordinates}
-              pathOptions={{
-                color: '#e8a54b',
-                weight: 1.5,
-                fillColor: '#e8a54b',
-                fillOpacity: 0.06,
-                dashArray: '6 4',
-              }}
-            >
-              <Tooltip sticky>{t.name}</Tooltip>
-            </Polygon>
-          ))}
+          visibleTerritories.map((territory) => {
+            const key = territoryLabelKey(territory.id)
+            return (
+              <Polygon
+                key={territory.id}
+                positions={territory.coordinates}
+                pathOptions={{
+                  color: '#e8a54b',
+                  weight: 1.5,
+                  fillColor: '#e8a54b',
+                  fillOpacity: 0.06,
+                  dashArray: '6 4',
+                }}
+              >
+                <Tooltip sticky>{key ? t(key) : territory.name}</Tooltip>
+              </Polygon>
+            )
+          })}
 
         {layerOn.vegetation &&
-          visibleTerritories.map((t) => (
+          visibleTerritories.map((territory) => (
             <Polygon
-              key={`veg-${t.id}`}
-              positions={t.coordinates}
+              key={`veg-${territory.id}`}
+              positions={territory.coordinates}
               pathOptions={{
                 color: '#3d6b4f',
                 weight: 0,
@@ -201,10 +221,10 @@ export function AegisMap({
           ))}
 
         {layerOn.weather &&
-          visibleTerritories.map((t) => (
+          visibleTerritories.map((territory) => (
             <CircleMarker
-              key={`wx-${t.id}`}
-              center={t.center}
+              key={`wx-${territory.id}`}
+              center={territory.center}
               radius={40}
               pathOptions={{
                 color: '#5b8def',
@@ -213,7 +233,7 @@ export function AegisMap({
                 weight: 1,
               }}
             >
-              <Tooltip>Simulated weather field</Tooltip>
+              <Tooltip>{t('map.weatherField')}</Tooltip>
             </CircleMarker>
           ))}
 
@@ -243,7 +263,7 @@ export function AegisMap({
                 pathOptions={{ color: '#8ecae6', weight: 2, dashArray: '4 3' }}
               >
                 <Tooltip>
-                  Wind {inc.weather.windSpeedKmh} km/h {dir}
+                  {t('map.wind')} {inc.weather.windSpeedKmh} km/h {dir}
                 </Tooltip>
               </Polyline>
             )

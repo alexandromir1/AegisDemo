@@ -1,22 +1,55 @@
 import { useDemo } from '../context/DemoContext'
 import { providers } from '../providers'
+import { useLocale, useT } from '../i18n/LocaleContext'
 
 export function SettingsPage() {
   const { demoMode, setDemoMode, resetDemo, mapStyle, setMapStyle } = useDemo()
+  const { locale, setLocale } = useLocale()
+  const t = useT()
   const sources = providers.incidents.getDataSources()
 
   return (
     <div className="page">
-      <h1 className="page-title">Settings</h1>
-      <p className="page-sub">
-        Lightweight demo controls. Production auth, billing and user management
-        are intentionally out of scope.
-      </p>
+      <h1 className="page-title">{t('settings.title')}</h1>
+      <p className="page-sub">{t('settings.sub')}</p>
 
       <div className="settings-block">
         <div className="panel">
           <div className="panel-header">
-            <h3 className="panel-title">Demo Mode</h3>
+            <h3 className="panel-title">{t('settings.language')}</h3>
+          </div>
+          <div className="panel-body">
+            <p
+              style={{
+                marginTop: 0,
+                color: 'var(--text-muted)',
+                fontSize: 13,
+              }}
+            >
+              {t('settings.languageHelp')}
+            </p>
+            <div className="lang-switch" style={{ marginTop: 8 }}>
+              <button
+                type="button"
+                className={locale === 'en' ? 'active' : ''}
+                onClick={() => setLocale('en')}
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                className={locale === 'ru' ? 'active' : ''}
+                onClick={() => setLocale('ru')}
+              >
+                RU
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="panel">
+          <div className="panel-header">
+            <h3 className="panel-title">{t('settings.demoMode')}</h3>
           </div>
           <div className="panel-body">
             <label className="switch">
@@ -25,7 +58,7 @@ export function SettingsPage() {
                 checked={demoMode}
                 onChange={(e) => setDemoMode(e.target.checked)}
               />
-              Use synthetic / simulated data
+              {t('settings.demoToggle')}
             </label>
             <p
               style={{
@@ -34,8 +67,7 @@ export function SettingsPage() {
                 fontSize: 13,
               }}
             >
-              When enabled, timestamps, satellite layers, weather and incidents
-              are simulated and clearly labeled as demo data.
+              {t('settings.demoHelp')}
             </p>
             <button
               type="button"
@@ -43,14 +75,14 @@ export function SettingsPage() {
               style={{ marginTop: 12 }}
               onClick={resetDemo}
             >
-              Reset Demo
+              {t('settings.reset')}
             </button>
           </div>
         </div>
 
         <div className="panel">
           <div className="panel-header">
-            <h3 className="panel-title">Map style</h3>
+            <h3 className="panel-title">{t('settings.mapStyle')}</h3>
           </div>
           <div className="panel-body" style={{ display: 'flex', gap: 8 }}>
             {(['satellite', 'terrain', 'dark'] as const).map((s) => (
@@ -60,7 +92,7 @@ export function SettingsPage() {
                 className={`btn${mapStyle === s ? ' btn-accent' : ''}`}
                 onClick={() => setMapStyle(s)}
               >
-                {s}
+                {t(`map.style.${s}`)}
               </button>
             ))}
           </div>
@@ -68,7 +100,7 @@ export function SettingsPage() {
 
         <div className="panel">
           <div className="panel-header">
-            <h3 className="panel-title">Provider status</h3>
+            <h3 className="panel-title">{t('settings.providers')}</h3>
           </div>
           <div className="panel-body">
             <div className="sources-grid">

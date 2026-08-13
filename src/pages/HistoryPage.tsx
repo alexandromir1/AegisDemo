@@ -20,7 +20,8 @@ import {
   severityDistribution,
 } from '../data/demo/meta'
 import { replayFrames } from '../data/demo/incidents'
-import { formatHa } from '../utils/format'
+import { formatHa, territoryLabelKey } from '../utils/format'
+import { useT } from '../i18n/LocaleContext'
 
 const chartTooltipStyle = {
   background: '#10161c',
@@ -39,6 +40,7 @@ function usePlayback(playing: boolean, onTick: () => void) {
 }
 
 export function HistoryPage() {
+  const t = useT()
   const { territories, incidents } = useDemo()
   const [territory, setTerritory] = useState('all')
   const [season, setSeason] = useState('all')
@@ -61,53 +63,55 @@ export function HistoryPage() {
 
   return (
     <div className="page">
-      <h1 className="page-title">Historical Fire Intelligence</h1>
-      <p className="page-sub">
-        AEGIS is not only a real-time detector — it reconstructs how incidents
-        developed and supports seasonal analysis. Simulated demo values.
-      </p>
+      <h1 className="page-title">{t('history.title')}</h1>
+      <p className="page-sub">{t('history.sub')}</p>
 
       <div className="filters">
         <select value={territory} onChange={(e) => setTerritory(e.target.value)}>
-          <option value="all">All territories</option>
-          {territories.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
+          <option value="all">{t('incidents.allTerritories')}</option>
+          {territories.map((item) => {
+            const key = territoryLabelKey(item.id)
+            return (
+              <option key={item.id} value={item.id}>
+                {key ? t(key) : item.name}
+              </option>
+            )
+          })}
         </select>
         <select value={season} onChange={(e) => setSeason(e.target.value)}>
-          <option value="all">All seasons</option>
-          <option value="summer">Summer</option>
-          <option value="autumn">Autumn</option>
-          <option value="winter">Winter</option>
-          <option value="spring">Spring</option>
+          <option value="all">{t('history.allSeasons')}</option>
+          <option value="summer">{t('history.summer')}</option>
+          <option value="autumn">{t('history.autumn')}</option>
+          <option value="winter">{t('history.winter')}</option>
+          <option value="spring">{t('history.spring')}</option>
         </select>
         <select defaultValue="2025-2026">
-          <option>2025–2026 season</option>
-          <option>2024–2025 season</option>
+          <option>2025–2026</option>
+          <option>2024–2025</option>
         </select>
       </div>
 
       <div className="kpi-row">
         <div className="kpi">
-          <div className="kpi-label">Fires detected</div>
+          <div className="kpi-label">{t('history.firesDetected')}</div>
           <div className="kpi-value">{historyStats.firesDetected}</div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">Verified fires</div>
+          <div className="kpi-label">{t('history.verified')}</div>
           <div className="kpi-value">{historyStats.verifiedFires}</div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">Avg detection confidence</div>
+          <div className="kpi-label">{t('history.avgConfidence')}</div>
           <div className="kpi-value accent">{historyStats.averageConfidence}%</div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">Avg detection latency</div>
-          <div className="kpi-value">{historyStats.averageLatencyMin} min</div>
+          <div className="kpi-label">{t('history.avgLatency')}</div>
+          <div className="kpi-value">
+            {historyStats.averageLatencyMin} {t('analysis.min')}
+          </div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">Total affected area</div>
+          <div className="kpi-label">{t('history.totalArea')}</div>
           <div className="kpi-value" style={{ fontSize: 22 }}>
             {formatHa(historyStats.totalAffectedHa)}
           </div>
@@ -117,7 +121,7 @@ export function HistoryPage() {
       <div className="chart-grid">
         <div className="panel chart-panel">
           <div className="panel-header">
-            <h3 className="panel-title">Wildfire activity over time</h3>
+            <h3 className="panel-title">{t('analysis.activity')}</h3>
           </div>
           <div className="panel-body" style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -139,7 +143,7 @@ export function HistoryPage() {
         </div>
         <div className="panel chart-panel">
           <div className="panel-header">
-            <h3 className="panel-title">Fire events by severity</h3>
+            <h3 className="panel-title">{t('analysis.severity')}</h3>
           </div>
           <div className="panel-body" style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -155,7 +159,7 @@ export function HistoryPage() {
         </div>
         <div className="panel chart-panel" style={{ gridColumn: '1 / -1' }}>
           <div className="panel-header">
-            <h3 className="panel-title">Detection confidence distribution</h3>
+            <h3 className="panel-title">{t('analysis.confidenceDist')}</h3>
           </div>
           <div className="panel-body" style={{ height: 200 }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -173,12 +177,12 @@ export function HistoryPage() {
 
       <div className="panel" style={{ marginTop: 16 }}>
         <div className="panel-header">
-          <h3 className="panel-title">Replay incident · A-1847</h3>
+          <h3 className="panel-title">{t('history.replay')}</h3>
           <Link to="/incidents/A-1847" className="btn">
-            Open detail
+            {t('history.openDetail')}
           </Link>
         </div>
-        <div style={{ height: 360 }}>
+        <div className="detail-map-wrap">
           <AegisMap
             incidents={frame.showMarker ? [primary] : []}
             focusIncident={primary}
@@ -200,7 +204,7 @@ export function HistoryPage() {
               setPlaying((p) => !p)
             }}
           >
-            {playing ? 'Pause' : 'Replay'}
+            {playing ? t('history.pause') : t('history.replayBtn')}
           </button>
           <span className="frame-label">{frame.label}</span>
           <input

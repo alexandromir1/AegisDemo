@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { DemoProvider, useDemo } from './context/DemoContext'
+import { LocaleProvider } from './i18n/LocaleContext'
 import { AppShell } from './components/layout/AppShell'
 import { GuidedTour } from './components/tour/GuidedTour'
 import { OverviewPage } from './pages/OverviewPage'
@@ -38,9 +39,11 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <DemoProvider>
-        <AppRoutes />
-      </DemoProvider>
+      <LocaleProvider>
+        <DemoProvider>
+          <AppRoutes />
+        </DemoProvider>
+      </LocaleProvider>
     </BrowserRouter>
   )
 }

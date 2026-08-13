@@ -6,7 +6,7 @@ import type {
   FireEvent,
   TimelineEvent,
 } from '../../types'
-import { formatUtc, growthLabel, statusLabel } from '../../utils/format'
+import { formatUtc, growthLabel, statusLabelKey } from '../../utils/format'
 import { AegisMap } from '../map/AegisMap'
 import { useDemo } from '../../context/DemoContext'
 import {
@@ -15,6 +15,8 @@ import {
   progressionTimestamp,
   type EvidenceSnapshot,
 } from '../../engine/evidenceEngine'
+import { useT } from '../../i18n/LocaleContext'
+import type { TranslationKey } from '../../i18n/en'
 
 function ConfidenceBar({
   value,
@@ -52,12 +54,22 @@ function EvidencePanel({
   expandedId: string | null
   onToggle: (type: string) => void
 }) {
+  const t = useT()
+  const sourceLabel = (type: string): string => {
+    const key = `evidence.${type}` as TranslationKey
+    return t(key)
+  }
+  const statusText = (status: string): string => {
+    const key = `evStatus.${status}` as TranslationKey
+    return t(key)
+  }
+
   return (
     <div className="panel">
       <div className="panel-header">
-        <h3 className="panel-title">Evidence</h3>
+        <h3 className="panel-title">{t('detail.evidence')}</h3>
         <span className="mono" style={{ fontSize: 11, color: 'var(--text-dim)' }}>
-          Simulated observations
+          {t('detail.simulatedObs')}
         </span>
       </div>
       <div className="panel-body">
@@ -72,13 +84,13 @@ function EvidencePanel({
                   className="evidence-summary"
                   onClick={() => onToggle(s.type)}
                 >
-                  <div className="name">{s.label}</div>
-                  <div className="status">{s.status.replace(/_/g, ' ')}</div>
+                  <div className="name">{sourceLabel(s.type)}</div>
+                  <div className="status">{statusText(s.status)}</div>
                   <div className="meta">
                     {s.confidence}%
                     {s.providerLabel ? ` · ${s.providerLabel}` : ''}
                     {s.observationCount && s.observationCount > 1
-                      ? ` · ${s.observationCount} observations`
+                      ? ` · ${s.observationCount} ${t('detail.observations')}`
                       : ''}
                     <ConfidenceBar
                       value={s.confidence}
@@ -96,7 +108,7 @@ function EvidencePanel({
                           <span>{formatUtc(obs.timestamp)}</span>
                           <span>{obs.providerLabel}</span>
                           <span>{obs.confidence}%</span>
-                          <span>{obs.status.replace(/_/g, ' ')}</span>
+                          <span>{statusText(obs.status)}</span>
                         </div>
                         <p>{obs.description}</p>
                         {obs.metadata && (
@@ -119,7 +131,7 @@ function EvidencePanel({
         </div>
 
         <div className="confidence-hero">
-          <div className="label">AEGIS Confidence</div>
+          <div className="label">{t('detail.aegisConfidence')}</div>
           <div className="big">{confidence}%</div>
           <div
             style={{
@@ -129,7 +141,7 @@ function EvidencePanel({
               fontFamily: 'var(--font-mono)',
             }}
           >
-            Derived from evidence · demo scoring model
+            {t('detail.derivedNote')}
           </div>
         </div>
 
@@ -140,7 +152,21 @@ function EvidencePanel({
 }
 
 function HowAegisKnows({ snapshot }: { snapshot: EvidenceSnapshot }) {
+  const t = useT()
   const [open, setOpen] = useState(true)
+  const stepLabel = (id: string): string => {
+    const map: Record<string, TranslationKey> = {
+      initial: 'knowledge.initial',
+      thermal: 'knowledge.thermal',
+      visual: 'knowledge.visual',
+      env: 'knowledge.env',
+      geo: 'knowledge.geo',
+      repeat: 'knowledge.repeat',
+      verify: 'knowledge.verify',
+    }
+    return t(map[id] ?? 'knowledge.initial')
+  }
+
   return (
     <div className="panel">
       <button
@@ -148,7 +174,7 @@ function HowAegisKnows({ snapshot }: { snapshot: EvidenceSnapshot }) {
         className="collapse-toggle"
         onClick={() => setOpen((v) => !v)}
       >
-        How AEGIS knows
+        {t('detail.howKnows')}
         <span>{open ? '−' : '+'}</span>
       </button>
       {open && (
@@ -160,8 +186,7 @@ function HowAegisKnows({ snapshot }: { snapshot: EvidenceSnapshot }) {
               color: 'var(--text-muted)',
             }}
           >
-            Corroboration chain from simulated observations — not a black-box
-            score.
+            {t('detail.howKnowsHelp')}
           </p>
           <div className="knowledge-chain">
             {snapshot.knowledgeChain.map((step, idx) => (
@@ -171,13 +196,15 @@ function HowAegisKnows({ snapshot }: { snapshot: EvidenceSnapshot }) {
               >
                 {idx > 0 && <div className="knowledge-arrow">↓</div>}
                 <div className="knowledge-card">
-                  <div className="knowledge-label">{step.label}</div>
+                  <div className="knowledge-label">{stepLabel(step.id)}</div>
                   {step.reached && step.timestamp ? (
                     <div className="knowledge-time">
                       {formatUtc(step.timestamp)}
                     </div>
                   ) : (
-                    <div className="knowledge-time pending">Pending</div>
+                    <div className="knowledge-time pending">
+                      {t('detail.pending')}
+                    </div>
                   )}
                 </div>
               </div>
@@ -185,7 +212,7 @@ function HowAegisKnows({ snapshot }: { snapshot: EvidenceSnapshot }) {
           </div>
 
           <div className="confidence-hero" style={{ marginTop: 8 }}>
-            <div className="label">AEGIS Confidence</div>
+            <div className="label">{t('detail.aegisConfidence')}</div>
             <div className="big">{snapshot.confidence}%</div>
           </div>
           <div className="reasoning-box">{snapshot.reasoning}</div>
@@ -207,11 +234,12 @@ function HowAegisKnows({ snapshot }: { snapshot: EvidenceSnapshot }) {
 }
 
 function ConfidenceHistory({ snapshot }: { snapshot: EvidenceSnapshot }) {
+  const t = useT()
   if (!snapshot.confidenceHistory.length) return null
   return (
     <div className="panel">
       <div className="panel-header">
-        <h3 className="panel-title">Confidence progression</h3>
+        <h3 className="panel-title">{t('detail.confidenceProgression')}</h3>
       </div>
       <div className="panel-body">
         <p
@@ -221,8 +249,7 @@ function ConfidenceHistory({ snapshot }: { snapshot: EvidenceSnapshot }) {
             color: 'var(--text-muted)',
           }}
         >
-          Confidence develops as independent evidence arrives — AEGIS does not
-          instantly know the answer.
+          {t('detail.confidenceProgressionHelp')}
         </p>
         <div className="confidence-history">
           {snapshot.confidenceHistory.map((p) => (
@@ -254,12 +281,13 @@ function TimelinePanel({
   onSelect: (e: TimelineEvent) => void
   liveConfidence: number
 }) {
+  const t = useT()
   return (
     <div className="panel">
       <div className="panel-header">
-        <h3 className="panel-title">Incident Timeline</h3>
+        <h3 className="panel-title">{t('detail.timeline')}</h3>
         <span className="mono" style={{ fontSize: 11, color: 'var(--accent)' }}>
-          {liveConfidence}% at cursor
+          {liveConfidence}% {t('detail.atCursor')}
         </span>
       </div>
       <div className="panel-body">
@@ -301,14 +329,15 @@ function FireProgression({
   onChange: (i: number) => void
   snapshot: EvidenceSnapshot
 }) {
+  const t = useT()
   if (!incident.perimeters.length) {
     return (
       <div className="panel">
         <div className="panel-header">
-          <h3 className="panel-title">Fire progression</h3>
+          <h3 className="panel-title">{t('detail.fireProgression')}</h3>
         </div>
         <div className="panel-body" style={{ color: 'var(--text-muted)' }}>
-          No perimeter history for this incident.
+          {t('detail.noPerimeter')}
         </div>
       </div>
     )
@@ -318,23 +347,23 @@ function FireProgression({
   const stageHints =
     incident.id === 'A-1847'
       ? [
-          'Initial anomaly',
-          'Thermal + visual evidence',
-          'Corroborated event',
-          'Expanding perimeter',
+          t('stage.0'),
+          t('stage.1'),
+          t('stage.2'),
+          t('stage.3'),
         ]
       : incident.perimeters.map((x) => x.label)
 
   return (
     <div className="panel">
       <div className="panel-header">
-        <h3 className="panel-title">Fire progression</h3>
+        <h3 className="panel-title">{t('detail.fireProgression')}</h3>
         <span className="mono" style={{ fontSize: 12, color: 'var(--accent)' }}>
           AEGIS {snapshot.confidence}% · {growthLabel(incident.growthPercent)}
         </span>
       </div>
       <div className="panel-body">
-        <div style={{ height: 280 }}>
+        <div className="detail-map-wrap sm">
           <AegisMap
             compact
             incidents={[
@@ -363,7 +392,7 @@ function FireProgression({
             color: 'var(--text-muted)',
           }}
         >
-          {stageHints[index] ?? p.label} · evidence as of{' '}
+          {stageHints[index] ?? p.label} · {t('detail.evidenceAsOf')}{' '}
           <span className="mono">{formatUtc(snapshot.asOf)}</span>
         </div>
         <div className="progression-controls">
@@ -402,20 +431,21 @@ function FireProgression({
 }
 
 function WeatherPanel({ incident }: { incident: FireEvent }) {
+  const t = useT()
   const w = incident.weather
   return (
     <div className="panel">
       <div className="panel-header">
-        <h3 className="panel-title">Environmental conditions</h3>
+        <h3 className="panel-title">{t('detail.env')}</h3>
       </div>
       <div className="panel-body">
         <div className="weather-grid">
           {[
-            ['Temperature', `${w.temperatureC}°C`],
-            ['Humidity', `${w.humidityPercent}%`],
-            ['Wind', `${w.windSpeedKmh} km/h ${w.windDirection}`],
-            ['Precipitation', `${w.precipitationMm} mm`],
-            ['Vegetation dryness', w.vegetationDryness.toUpperCase()],
+            [t('detail.temperature'), `${w.temperatureC}°C`],
+            [t('detail.humidity'), `${w.humidityPercent}%`],
+            [t('detail.wind'), `${w.windSpeedKmh} km/h ${w.windDirection}`],
+            [t('detail.precipitation'), `${w.precipitationMm} mm`],
+            [t('detail.dryness'), w.vegetationDryness.toUpperCase()],
           ].map(([label, value]) => (
             <div key={label} className="stat-cell">
               <div className="label">{label}</div>
@@ -438,37 +468,38 @@ function ImpactPanel({
   incident: FireEvent
   detectionConfidence: number
 }) {
+  const t = useT()
   const i = incident.impact
   return (
     <div className="panel">
       <div className="panel-header">
-        <h3 className="panel-title">Impact Assessment</h3>
+        <h3 className="panel-title">{t('detail.impact')}</h3>
       </div>
       <div className="panel-body">
         <div className="impact-split">
           <div className="stat-cell">
-            <div className="label">Detection confidence</div>
+            <div className="label">{t('detail.detectionConfidence')}</div>
             <div className="value">{detectionConfidence}%</div>
             <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>
-              Is there probably a fire?
+              {t('detail.isThereFire')}
             </div>
           </div>
           <div className="stat-cell">
-            <div className="label">Fire spread risk</div>
+            <div className="label">{t('detail.spreadRisk')}</div>
             <div className="value" style={{ fontSize: 16 }}>
               {i.fireSpreadRisk.toUpperCase()}
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>
-              Separate from detection confidence
+              {t('detail.separateFromDetection')}
             </div>
           </div>
         </div>
         <div className="impact-grid" style={{ marginTop: 10 }}>
           {[
-            ['Nearby forest assets', String(i.nearbyForestAssets)],
-            ['Infrastructure exposure', i.infrastructureExposure.toUpperCase()],
-            ['Population exposure', i.populationExposure.toUpperCase()],
-            ['Estimated direction', i.estimatedDirection],
+            [t('detail.forestAssets'), String(i.nearbyForestAssets)],
+            [t('detail.infraExposure'), i.infrastructureExposure.toUpperCase()],
+            [t('detail.popExposure'), i.populationExposure.toUpperCase()],
+            [t('detail.direction'), i.estimatedDirection],
           ].map(([label, value]) => (
             <div key={label} className="stat-cell">
               <div className="label">{label}</div>
@@ -478,7 +509,7 @@ function ImpactPanel({
             </div>
           ))}
         </div>
-        <div style={{ height: 220, marginTop: 12 }}>
+        <div className="detail-map-wrap xs" style={{ marginTop: 12 }}>
           <AegisMap
             compact
             incidents={[incident]}
@@ -503,12 +534,13 @@ function ImpactPanel({
 }
 
 function AssessmentPanel({ incident }: { incident: FireEvent }) {
+  const t = useT()
   return (
     <div className="assessment-box">
       <div className="priority">{incident.assessment.priorityLabel}</div>
       <p>{incident.assessment.summary}</p>
       <div className="panel-title" style={{ marginBottom: 8 }}>
-        Recommended actions
+        {t('detail.recommended')}
       </div>
       <ol className="action-list">
         {incident.assessment.recommendedActions.map((a) => (
@@ -523,13 +555,14 @@ function AssessmentPanel({ incident }: { incident: FireEvent }) {
           color: 'var(--text-dim)',
         }}
       >
-        Demo recommendations only · Decision support, not autonomous command
+        {t('detail.demoOnly')}
       </p>
     </div>
   )
 }
 
 function StatusControl({ incident }: { incident: FireEvent }) {
+  const t = useT()
   const { setIncidentStatus } = useDemo()
   const statuses = [
     'detected',
@@ -542,7 +575,7 @@ function StatusControl({ incident }: { incident: FireEvent }) {
   return (
     <div className="panel">
       <div className="panel-header">
-        <h3 className="panel-title">Incident status</h3>
+        <h3 className="panel-title">{t('detail.incidentStatus')}</h3>
       </div>
       <div className="panel-body">
         <div className="status-flow">
@@ -553,7 +586,7 @@ function StatusControl({ incident }: { incident: FireEvent }) {
               className={incident.status === s ? 'active' : ''}
               onClick={() => setIncidentStatus(incident.id, s)}
             >
-              {statusLabel(s)}
+              {t(statusLabelKey(s))}
             </button>
           ))}
         </div>
@@ -563,44 +596,45 @@ function StatusControl({ incident }: { incident: FireEvent }) {
 }
 
 function CorroborationCompare({ currentId }: { currentId: string }) {
+  const t = useT()
   if (currentId !== 'A-1847' && currentId !== 'A-1844') return null
   const isConfirmed = currentId === 'A-1847'
   return (
     <div className="panel compare-panel">
       <div className="panel-header">
-        <h3 className="panel-title">Corroboration contrast</h3>
+        <h3 className="panel-title">{t('detail.compare')}</h3>
       </div>
       <div className="panel-body">
         <div className="compare-grid">
           <div className={`compare-col${isConfirmed ? ' active' : ''}`}>
             <div className="compare-id">A-1847</div>
-            <div className="compare-tag">Confirmed wildfire</div>
+            <div className="compare-tag">{t('detail.compare.confirmed')}</div>
             <ul>
-              <li>Multiple independent signals</li>
-              <li>Repeated satellite observation</li>
-              <li>Thermal confirmation</li>
-              <li>Environmental support</li>
-              <li>Confidence increases over time</li>
+              <li>{t('detail.compare.c1')}</li>
+              <li>{t('detail.compare.c2')}</li>
+              <li>{t('detail.compare.c3')}</li>
+              <li>{t('detail.compare.c4')}</li>
+              <li>{t('detail.compare.c5')}</li>
             </ul>
             {!isConfirmed && (
               <Link to="/incidents/A-1847" className="btn btn-accent">
-                Open A-1847
+                {t('detail.openA1847')}
               </Link>
             )}
           </div>
           <div className={`compare-col${!isConfirmed ? ' active' : ''}`}>
             <div className="compare-id">A-1844</div>
-            <div className="compare-tag">Likely false positive</div>
+            <div className="compare-tag">{t('detail.compare.falsePositive')}</div>
             <ul>
-              <li>Single / weak visual signal</li>
-              <li>No thermal confirmation</li>
-              <li>No repeated positive observation</li>
-              <li>Weak environmental support</li>
-              <li>Confidence decreases</li>
+              <li>{t('detail.compare.f1')}</li>
+              <li>{t('detail.compare.f2')}</li>
+              <li>{t('detail.compare.f3')}</li>
+              <li>{t('detail.compare.f4')}</li>
+              <li>{t('detail.compare.f5')}</li>
             </ul>
             {isConfirmed && (
               <Link to="/incidents/A-1844" className="btn btn-accent">
-                Open A-1844
+                {t('detail.openA1844')}
               </Link>
             )}
           </div>
@@ -611,6 +645,7 @@ function CorroborationCompare({ currentId }: { currentId: string }) {
 }
 
 export function IncidentDetailView({ incident }: { incident: FireEvent }) {
+  const t = useT()
   const fullAsOf = latestObservationTime(incident.observations)
   const [asOf, setAsOf] = useState(fullAsOf)
   const [timelineId, setTimelineId] = useState<string | null>(null)
@@ -762,8 +797,8 @@ export function IncidentDetailView({ incident }: { incident: FireEvent }) {
             {incident.subtitle}
           </p>
           <p style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 6 }}>
-            {incident.locationLabel} · Detected{' '}
-            {formatUtc(incident.detectedAt)} · Reconstructing as of{' '}
+            {incident.locationLabel} · {t('detail.detected')}{' '}
+            {formatUtc(incident.detectedAt)} · {t('detail.reconstructing')}{' '}
             <span className="mono">{formatUtc(asOf)}</span>
           </p>
         </div>
@@ -774,37 +809,39 @@ export function IncidentDetailView({ incident }: { incident: FireEvent }) {
 
       <div className="stat-strip" style={{ marginBottom: 16 }}>
         <div className="stat-cell">
-          <div className="label">Confidence</div>
+          <div className="label">{t('detail.confidence')}</div>
           <div className="value">{snapshot.confidence}%</div>
         </div>
         <div className="stat-cell">
-          <div className="label">Affected area</div>
+          <div className="label">{t('detail.affectedArea')}</div>
           <div className="value">{incident.affectedAreaHa} ha</div>
         </div>
         <div className="stat-cell">
-          <div className="label">Growth</div>
+          <div className="label">{t('detail.growth')}</div>
           <div className="value">{growthLabel(incident.growthPercent)}</div>
         </div>
         <div className="stat-cell">
-          <div className="label">Status</div>
+          <div className="label">{t('detail.status')}</div>
           <div className="value" style={{ fontSize: 16 }}>
-            {statusLabel(snapshot.status)}
+            {t(statusLabelKey(snapshot.status))}
           </div>
         </div>
       </div>
 
       <div className="detail-grid">
         <div className="detail-main">
-          <div className="panel" style={{ height: 360 }}>
-            <AegisMap
-              incidents={[viewIncident]}
-              selectedId={incident.id}
-              focusIncident={incident}
-              perimeters={incident.perimeters}
-              activePerimeterIndex={perimeterIndex}
-              nearbyAssets={incident.impact.nearbyAssets}
-              showWind
-            />
+          <div className="panel detail-map-panel">
+            <div className="detail-map-wrap">
+              <AegisMap
+                incidents={[viewIncident]}
+                selectedId={incident.id}
+                focusIncident={incident}
+                perimeters={incident.perimeters}
+                activePerimeterIndex={perimeterIndex}
+                nearbyAssets={incident.impact.nearbyAssets}
+                showWind
+              />
+            </div>
           </div>
 
           <EvidencePanel

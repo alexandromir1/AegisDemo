@@ -18,6 +18,7 @@ import {
 } from '../data/demo/meta'
 import { formatHa } from '../utils/format'
 import { providers } from '../providers'
+import { useT } from '../i18n/LocaleContext'
 
 const chartTooltipStyle = {
   background: '#10161c',
@@ -26,20 +27,17 @@ const chartTooltipStyle = {
 }
 
 export function AnalysisPage() {
+  const t = useT()
   const sources = providers.incidents.getDataSources()
 
   return (
     <div className="page">
-      <h1 className="page-title">Analysis</h1>
-      <p className="page-sub">
-        How AEGIS combines fragmented sources into a single intelligence picture.
-        Detection confidence is derived from structured simulated observations via
-        the demo Evidence Engine — not a black-box score.
-      </p>
+      <h1 className="page-title">{t('analysis.title')}</h1>
+      <p className="page-sub">{t('analysis.sub')}</p>
 
       <div className="panel" style={{ marginBottom: 16 }}>
         <div className="panel-header">
-          <h3 className="panel-title">Data Sources</h3>
+          <h3 className="panel-title">{t('analysis.dataSources')}</h3>
         </div>
         <div className="panel-body">
           <div className="sources-grid">
@@ -69,32 +67,32 @@ export function AnalysisPage() {
               color: 'var(--text-muted)',
             }}
           >
-            Vision signal uses an internal YOLOv5 prototype (trained on Yakutia
-            imagery) labeled DEMO — not globally validated. Each provider can be
-            swapped independently for production APIs later.
+            {t('analysis.providerNote')}
           </p>
         </div>
       </div>
 
       <div className="kpi-row">
         <div className="kpi">
-          <div className="kpi-label">Fires detected</div>
+          <div className="kpi-label">{t('analysis.firesDetected')}</div>
           <div className="kpi-value">{historyStats.firesDetected}</div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">Verified fires</div>
+          <div className="kpi-label">{t('analysis.verifiedFires')}</div>
           <div className="kpi-value">{historyStats.verifiedFires}</div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">Avg confidence</div>
+          <div className="kpi-label">{t('analysis.avgConfidence')}</div>
           <div className="kpi-value accent">{historyStats.averageConfidence}%</div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">Avg latency</div>
-          <div className="kpi-value">{historyStats.averageLatencyMin} min</div>
+          <div className="kpi-label">{t('analysis.avgLatency')}</div>
+          <div className="kpi-value">
+            {historyStats.averageLatencyMin} {t('analysis.min')}
+          </div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">Total affected</div>
+          <div className="kpi-label">{t('analysis.totalAffected')}</div>
           <div className="kpi-value" style={{ fontSize: 22 }}>
             {formatHa(historyStats.totalAffectedHa)}
           </div>
@@ -104,7 +102,7 @@ export function AnalysisPage() {
       <div className="chart-grid">
         <div className="panel chart-panel">
           <div className="panel-header">
-            <h3 className="panel-title">Wildfire activity over time</h3>
+            <h3 className="panel-title">{t('analysis.activity')}</h3>
           </div>
           <div className="panel-body" style={{ height: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -127,7 +125,7 @@ export function AnalysisPage() {
 
         <div className="panel chart-panel">
           <div className="panel-header">
-            <h3 className="panel-title">Fire events by severity</h3>
+            <h3 className="panel-title">{t('analysis.severity')}</h3>
           </div>
           <div className="panel-body" style={{ height: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -159,7 +157,7 @@ export function AnalysisPage() {
 
         <div className="panel chart-panel" style={{ gridColumn: '1 / -1' }}>
           <div className="panel-header">
-            <h3 className="panel-title">Detection confidence distribution</h3>
+            <h3 className="panel-title">{t('analysis.confidenceDist')}</h3>
           </div>
           <div className="panel-body" style={{ height: 240 }}>
             <ResponsiveContainer width="100%" height="100%">

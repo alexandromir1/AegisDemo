@@ -1,12 +1,21 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDemo } from '../context/DemoContext'
-import { formatUtc, growthLabel, statusLabel } from '../utils/format'
+import { AegisMap } from '../components/map/AegisMap'
+import {
+  formatUtc,
+  growthLabel,
+  priorityLabelKey,
+  statusLabelKey,
+  territoryLabelKey,
+} from '../utils/format'
 import type { IncidentStatus, Priority } from '../types'
+import { useT } from '../i18n/LocaleContext'
 
 export function IncidentsPage() {
   const { incidents, territories } = useDemo()
   const navigate = useNavigate()
+  const t = useT()
   const [status, setStatus] = useState<'all' | IncidentStatus>('all')
   const [priority, setPriority] = useState<'all' | Priority>('all')
   const [confidence, setConfidence] = useState<'all' | 'low' | 'mid' | 'high'>(
@@ -29,40 +38,49 @@ export function IncidentsPage() {
 
   return (
     <div className="page">
-      <h1 className="page-title">Incidents</h1>
-      <p className="page-sub">
-        All monitored events across territories. Select an incident to inspect
-        evidence, progression and assessment.
-      </p>
+      <h1 className="page-title">{t('incidents.title')}</h1>
+      <p className="page-sub">{t('incidents.sub')}</p>
+
+      <div className="panel incidents-map-panel">
+        <div className="panel-header">
+          <h3 className="panel-title">{t('incidents.mapTitle')}</h3>
+        </div>
+        <div className="incidents-map-wrap">
+          <AegisMap
+            incidents={filtered}
+            onSelect={(id) => navigate(`/incidents/${id}`)}
+          />
+        </div>
+      </div>
 
       <div className="filters">
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value as typeof status)}
         >
-          <option value="all">All statuses</option>
-          <option value="detected">Detected</option>
-          <option value="investigating">Investigating</option>
-          <option value="verified">Verified</option>
-          <option value="contained">Contained</option>
-          <option value="resolved">Resolved</option>
-          <option value="false_positive">False positive</option>
+          <option value="all">{t('incidents.allStatuses')}</option>
+          <option value="detected">{t('status.detected')}</option>
+          <option value="investigating">{t('status.investigating')}</option>
+          <option value="verified">{t('status.verified')}</option>
+          <option value="contained">{t('status.contained')}</option>
+          <option value="resolved">{t('status.resolved')}</option>
+          <option value="false_positive">{t('status.false_positive')}</option>
         </select>
         <select
           value={priority}
           onChange={(e) => setPriority(e.target.value as typeof priority)}
         >
-          <option value="all">All priorities</option>
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-          <option value="critical">Critical</option>
+          <option value="all">{t('incidents.allPriorities')}</option>
+          <option value="low">{t('priority.low')}</option>
+          <option value="medium">{t('priority.medium')}</option>
+          <option value="high">{t('priority.high')}</option>
+          <option value="critical">{t('priority.critical')}</option>
         </select>
         <select
           value={confidence}
           onChange={(e) => setConfidence(e.target.value as typeof confidence)}
         >
-          <option value="all">All confidence</option>
+          <option value="all">{t('incidents.allConfidence')}</option>
           <option value="low">&lt; 50%</option>
           <option value="mid">50–85%</option>
           <option value="high">≥ 85%</option>
@@ -71,12 +89,15 @@ export function IncidentsPage() {
           value={territory}
           onChange={(e) => setTerritory(e.target.value)}
         >
-          <option value="all">All territories</option>
-          {territories.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
+          <option value="all">{t('incidents.allTerritories')}</option>
+          {territories.map((item) => {
+            const key = territoryLabelKey(item.id)
+            return (
+              <option key={item.id} value={item.id}>
+                {key ? t(key) : item.name}
+              </option>
+            )
+          })}
         </select>
       </div>
 
@@ -84,14 +105,14 @@ export function IncidentsPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Location</th>
-              <th>Status</th>
-              <th>Confidence</th>
-              <th>Area</th>
-              <th>Growth</th>
-              <th>Priority</th>
-              <th>Detected</th>
+              <th>{t('incidents.col.id')}</th>
+              <th>{t('incidents.col.location')}</th>
+              <th>{t('incidents.col.status')}</th>
+              <th>{t('incidents.col.confidence')}</th>
+              <th>{t('incidents.col.area')}</th>
+              <th>{t('incidents.col.growth')}</th>
+              <th>{t('incidents.col.priority')}</th>
+              <th>{t('incidents.col.detected')}</th>
             </tr>
           </thead>
           <tbody>
@@ -103,14 +124,16 @@ export function IncidentsPage() {
                 <td>{i.locationLabel}</td>
                 <td>
                   <span className={`badge ${i.status}`}>
-                    {statusLabel(i.status)}
+                    {t(statusLabelKey(i.status))}
                   </span>
                 </td>
                 <td className="mono">{i.confidence}%</td>
                 <td className="mono">{i.affectedAreaHa} ha</td>
                 <td className="mono">{growthLabel(i.growthPercent)}</td>
                 <td>
-                  <span className={`badge ${i.priority}`}>{i.priority}</span>
+                  <span className={`badge ${i.priority}`}>
+                    {t(priorityLabelKey(i.priority))}
+                  </span>
                 </td>
                 <td className="mono">{formatUtc(i.detectedAt)}</td>
               </tr>

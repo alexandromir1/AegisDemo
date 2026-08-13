@@ -112,6 +112,9 @@ h4 {
 .app-main {
   overflow: auto;
   position: relative;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   background:
     radial-gradient(ellipse 80% 50% at 50% 0%, rgba(36, 48, 64, 0.35), transparent),
     var(--bg-deep);
@@ -282,6 +285,8 @@ h4 {
 
 .page-wide {
   padding: 0;
+  flex: 1;
+  min-height: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -375,6 +380,8 @@ h4 {
   border-radius: 0;
   border: none;
   min-height: 0;
+  height: 100%;
+  width: 100%;
 }
 
 .leaflet-container {
@@ -382,6 +389,11 @@ h4 {
   height: 100%;
   background: #0c1218;
   font: inherit;
+}
+
+.leaflet-control-attribution,
+.leaflet-control-attribution a {
+  display: none !important;
 }
 
 .layer-control {
@@ -1283,11 +1295,140 @@ h4 {
   height: 100%;
 }
 
+.live-monitor {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(320px, 1fr) minmax(220px, 280px);
+  height: 100%;
+}
+
+.live-map-pane {
+  position: relative;
+  min-height: 320px;
+  height: 100%;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+}
+
+.live-map-pane .map-stage {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  min-height: 0;
+}
+
 .live-side {
   border-left: 1px solid var(--border);
   background: var(--bg-panel);
   overflow: auto;
   padding: 12px;
+}
+
+.live-side-bottom {
+  border-left: none;
+  border-top: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.live-side-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.live-cards-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.live-cards-row .incident-card {
+  min-width: 220px;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.incidents-map-panel {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.incidents-map-wrap {
+  position: relative;
+  height: min(48vh, 480px);
+  min-height: 360px;
+  width: 100%;
+}
+
+.incidents-map-wrap .map-stage {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+}
+
+.detail-map-panel {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-map-wrap {
+  position: relative;
+  width: 100%;
+  height: 420px;
+  min-height: 320px;
+}
+
+.detail-map-wrap.sm {
+  height: 280px;
+  min-height: 220px;
+}
+
+.detail-map-wrap.xs {
+  height: 240px;
+  min-height: 200px;
+}
+
+.detail-map-wrap .map-stage {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+}
+
+.lang-switch {
+  display: inline-flex;
+  gap: 2px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  padding: 2px;
+  border-radius: var(--radius);
+}
+
+.lang-switch button {
+  padding: 4px 8px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border-radius: 2px;
+}
+
+.lang-switch button.active {
+  background: var(--accent-dim);
+  color: var(--accent);
 }
 
 .incident-card {
@@ -1322,9 +1463,27 @@ h4 {
   font-family: var(--font-mono);
 }
 
+.overview-map-panel {
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .overview-map-wrap {
-  height: calc(100vh - var(--header-h) - 220px);
-  min-height: 480px;
+  position: relative;
+  height: min(62vh, 720px);
+  min-height: 420px;
+  width: 100%;
+}
+
+.overview-map-wrap .map-stage {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
 }
 
 .tagline {
@@ -1341,6 +1500,9 @@ h4 {
   .live-layout,
   .chart-grid {
     grid-template-columns: 1fr;
+  }
+  .live-monitor {
+    grid-template-rows: minmax(280px, 1fr) minmax(200px, 260px);
   }
   .stat-strip {
     grid-template-columns: repeat(2, 1fr);
